@@ -22,12 +22,13 @@ function readFeedList (urlOpml, callback) {
 			});
 		return (feedUrlList);
 		}
-	opml.read (urlOpml, undefined, function (err, theOutline) {
-		if (err) {
-			console.log ("readList: err.message == " + err.message);
-			callback (err);
+	readHttpFileThruProxy (urlOpml, undefined, function (opmltext) {
+		if (opmltext === undefined) {
+			const message = "Can't view the outline because there was an error reading the file.";
+			callback ({message});
 			}
 		else {
+			const theOutline = opml.parse (opmltext);
 			const newlist = getUrlArrayFromOutline (theOutline);
 			callback (undefined, newlist);
 			}
@@ -39,6 +40,7 @@ function viewSubsList (theList, userOptions) {
 		sortBy: "name",
 		flReverseSort: false,
 		maxTitleChars: 40,
+		maxUrlChars: 40, //12/30/24 by DW
 		title: undefined,
 		opmlUrl: undefined
 		};
@@ -51,13 +53,15 @@ function viewSubsList (theList, userOptions) {
 			}
 		add ("<div class=\"divPagetopStuff\">")
 		add ("<h3>" + options.title + "</h3>");
+		add ("<div class=\"divInputAndButton\">");
 		add ("<input class=\"inputForUrl\" value=\"" + options.opmlUrl + "\" placeholder=\"Address of OPML file\" type=\"text\" >");
 		add ("<button onclick=\"goButtonClick ()\" class=\"btn\">Go</button>");
+		add ("</div>");
 		add ("</div>");
 		options.whereToAppend.append (pagetopHtml);
 		}
 	
-	const theTable = $("<table class=\"table\"></table>");
+	const theTable = $("<table class=\"feedlistTable\"></table>");
 	function sortTheList () {
 		theList.sort (function (a, b) {
 			switch (options.sortBy) {
@@ -160,24 +164,26 @@ function viewSubsList (theList, userOptions) {
 		theTable.append (getColumnHeaders ());
 		theList.forEach (function (item) {
 			const tr = $("<tr></tr>");
-			function wrapInUrl (theText, url) {
+			function wrapInUrl (theText, url, maxChars=undefined) {
 				if (url === undefined) {
 					return (theText);
 					}
 				else {
+					if (maxChars !== undefined) {
+						theText = maxStringLength (theText, maxChars, false, true);
+						}
 					return ("<a href=\"" + item.htmlUrl + "\" target=\"_blank\">" + theText + "</a>");
 					}
 				}
 			function getFeedTitle () {
 				const td = $("<td class=\"tdFeedTitle\"></td>");
-				var theText = maxStringLength (item.text, options.maxTitleChars, false, true);
-				theText = wrapInUrl (theText, item.htmlUrl);
+				var theText = wrapInUrl (item.text, item.htmlUrl, options.maxTitleChars);
 				td.append (theText);
 				return (td);
 				}
 			function getXmlUrl () {
 				const td = $("<td class=\"tdXmlUrl\"></td>");
-				const theText = wrapInUrl (item.xmlUrl, item.xmlUrl);
+				const theText = wrapInUrl (item.xmlUrl, item.xmlUrl, options.maxUrlChars);
 				td.append (theText);
 				return (td);
 				}
@@ -190,25 +196,6 @@ function viewSubsList (theList, userOptions) {
 	buildTable ();
 	options.whereToAppend.append (theTable);
 	}
-
-function viewUrlInSubsList (opmlUrl) {
-	readFeedList (opmlUrl, function (err, theList) {
-		if (err) {
-			console.log (err.message);
-			}
-		else {
-			
-			const options = {
-				opmlUrl,
-				title: "These are the feeds in this OPML file...",
-				whereToAppend: $(".tableContainer")
-				}
-			$(".tableContainer").empty ();
-			viewSubsList (theList, options);
-			}
-		});
-	}
-
 
 function startup () {
 	console.log ("startup");
@@ -223,15 +210,19 @@ function startup () {
 			}
 		}
 	var urlparam = getUrlParam ("url");
+	
+	if (urlparam == "https://feedland.social/opml") { //12/29/24 by DW
+		location.href = "https://viewfeedlist.opml.org/?url=https%3A%2F%2Ffeedland.social%2Fopml%3Fscreenname%3Ddavewiner%26catname%3Dblogroll";
+		}
+	
 	if (urlparam === undefined) {
 		urlparam = urlBlogrollOpml;
 		}
 	readFeedList (urlparam, function (err, theList) {
 		if (err) {
-			console.log (err.message);
+			alertDIalog (err.message);
 			}
 		else {
-			
 			const options = {
 				opmlUrl: urlparam,
 				title: "These are the feeds in this OPML file.",
@@ -242,4 +233,3 @@ function startup () {
 			}
 		});
 	}
-

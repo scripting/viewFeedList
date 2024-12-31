@@ -32,12 +32,35 @@ body {
 	}
 .tableContainer .divPagetopStuff p {
 	}
+
+.tableContainer .divInputAndButton {
+	}
 .tableContainer .inputForUrl {
+	width: 85%;
 	font-size: 18px; 
 	padding: 3px; 
 	height: 28px; 
-	width: 75%;
 	margin-bottom: 0;
+	margin-right: 5px;
+	}
+.tableContainer .btn {
+	flex: 1;
 	}
 
+.tableContainer .feedlistTable {
+	}
+.tableContainer .feedlistTable th {
+	padding-bottom: 7px;
+	}
+.tableContainer .feedlistTable td {
+	padding-top: 7px;
+	padding-bottom: 7px;
+	border-top: 1px dotted silver;
+	}
 
+/* styles for tablet */
+	@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+		.divPageBody {
+			width: 85%;
+			}
+		}
